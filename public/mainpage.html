@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Main Page</title>
+        <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color:blanchedalmond;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        h1 {
+            color:blue;
+            margin-bottom: 20px;
+            text-align: center;
+            line-height: 1.2;
+        }
+
+        #welcomeContainer {
+            margin-bottom: 20px;
+        }
+
+        #petContainer {
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 60%;
+            max-width: 600px;
+        }
+
+        #ownedPetsContainer {
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 60%;
+            max-width: 600px;
+            margin-bottom: 50px;
+        }
+
+        #buttonsContainer {
+            background-color: #f9f9f9;
+            border-radius: 10px;
+            padding: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 60%;
+            max-width: 240px;
+            margin-bottom: 10px;
+            
+        }
+
+        input[type="text"] {
+            padding: 8px;
+            margin-bottom: 10px;
+            width: calc(100% - 16px);
+            box-sizing: border-box;
+        }
+
+        ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        li {
+            padding: 10px;
+            border-bottom: 1px solid #ccc;
+        }
+
+        .user-actions {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 10px 20px;
+            cursor: pointer;
+        }
+
+        #adminButton {
+            color:black;
+            background-color:brown;
+            margin-top: 10px;
+        }
+
+        .action-button {
+            padding: 10px 20px;
+            cursor: pointer;
+            margin-left: auto;
+        }
+
+        </style>
+    </head>
+        <body>
+        <div id="welcomeContainer">
+            <h1 id="welcomeMessage">Welcome to the main page!</h1>
+        </div>
+
+        <div id="buttonsContainer">
+            <button id="Logout" onclick="LogOut()">Logout</button>
+            <button id="EditAccount" onclick="EditAccount()">Edit account info</button>
+        </div>
+
+        <div id="ownedPetsContainer">
+            <h3>Owned Pets</h3>
+            <ul id="owned-pets"></ul>
+
+        </div>
+
+        <div id="petContainer">
+            <h2> Pet search </h2>
+            <ul id ="pet-list"></ul>
+        </div>
+        
+        <button id="adminButton" onclick="attemptAdminScreen()">Admin</button>
+            
+            <script>
+                //grab the pets of the session's user ID
+                const welcomeMessage = document.getElementById('welcomeMessage');
+                const userDataString = localStorage.getItem('userData');
+                let userData = JSON.parse(userDataString);
+
+                if(userData) {
+                    welcomeMessage.textContent = `Welcome to the main page, ${userData.username}!`;
+                }
+
+                fetch('/pets') //grab the pets list from the DB
+                    .then(response => response.json())
+                    .then(users => {
+                        const petList = document.getElementById('pet-list');
+                        users.forEach(pet => {
+                            const li = document.createElement("li");
+                            li.textContent = `${pet.Title}, ${pet.Species}, ${pet.Breed}, ${pet.Price}`;
+                            li.dataset.id = pet.PetID;
+                            const purchaseButton = document.createElement("button");
+                            purchaseButton.textContent = "Purchase";
+                            purchaseButton.classList.add("action-button");
+                            purchaseButton.onclick = () => purchasePet(li.dataset.id);
+                            li.appendChild(purchaseButton);
+                            petList.appendChild(li);
+                        });
+                    })
+                    .catch(error => console.error('Error fetching pets:', error));
+
+                //maybe we need return pets functions? IDK bro
+                fetch(`/pets/person/${userData.id}`)
+                    .then(response => response.json())
+                    .then(owned => {
+                        const ownedList = document.getElementById('owned-pets');
+                        owned.forEach(pet => {
+                            const li = document.createElement("li");
+                            li.textContent = `${pet.Title}, ${pet.Species}, ${pet.Breed}`;
+                            li.dataset.id = pet.PetID;
+                            const refundButton = document.createElement("button");
+                            refundButton.textContent = "Refund";
+                            refundButton.classList.add("action-button");
+                            refundButton.onclick = () => refundPet(li.dataset.id);
+                            li.appendChild(refundButton);
+                            ownedList.appendChild(li);
+                        });
+                    })
+                    .catch(error => console.error('Error fetching users pets:', error));
+                    
+
+                function purchasePet(petID) {
+                    console.log(userData.id);
+                    fetch(`/purchase/${petID}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ownerId: userData.id})
+                    })
+                    .then(response => {
+                        if(response.ok) {
+                            console.log('Pet is purchased for the user!');
+                            window.location.reload(); //reload page to repull the pets
+                        } else {
+                            console.error('Failed to purchase pet');
+                        }
+                    }) 
+                    .catch(error => console.error('Error purchasing pet:', error));
+                }
+
+                function refundPet(petID) {
+                    fetch(`/return/${petID}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ownerId: userData.id})
+                    })
+                    .then(response => {
+                        if(response.ok) {
+                            console.log('Pet is returned for the user!');
+                            window.location.reload(); //reload page to repull the pets
+                        } else {
+                            console.error('Failed to return pet');
+                        }
+                    }) 
+                    .catch(error => console.error('Error returning pet:', error));
+                }
+
+                function LogOut() {
+                    fetch('/Logout', {
+                        method: 'POST',
+                        credentials: 'same-origin'
+                    })
+                    .then(response => {
+                        if(response.ok) {
+                            console.log('Logout successful');
+                            window.location.href = '/index.html';
+                        } else {
+                            console.error('Logout Failed:', response.statusText);
+                        }
+                    })
+                    .catch(error => console.error('Error during logout:', error));
+                }
+
+                function attemptAdminScreen() {
+                    if(userData.isAdmin == true) { //error happening here, cant read null
+                        window.location.href = '/Admin.html';
+                    } else {
+                        //do something to warn the user they cant do that
+                        alert('You are not authorized to access the admin screen.');
+                    }
+                }
+
+                function EditAccount() {
+                    window.location.href = '/Edit.html'; //edit screen to see all info of account
+                }
+                
+            </script>
+        </body>
+</html>

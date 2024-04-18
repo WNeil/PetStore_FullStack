@@ -1,0 +1,123 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Page</title>
+    <style>
+    body {
+        font-family: Arial, sans-serif;
+        background-color:blanchedalmond;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+    }
+
+    #container {
+        background-color: azure;
+        padding: 20px;
+        border-radius: 5px;
+        box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        flex-direction: column;
+        align-items: center;
+    }
+
+    h1 {
+        color:blue;
+        margin-bottom: 20px;
+        text-align: center;
+        line-height: 1.2;
+    }
+
+    #LoginBox {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    #LoginBox input,
+    #LoginBox button {
+        margin-bottom: 10px;
+        width: 100%;
+        padding: 10px;
+    }
+
+    #registerButton {
+        width: 100%;
+        padding: 10px;
+    }
+
+
+
+    </style>
+</head>
+<body>
+    <h1>Welcome to Neil's pet store!</h1>
+
+    <div id="container">
+        <form id="LoginBox">
+            <p>Username</p>
+            <input type="text" id="usernameField" name="username" placeholder="Username here">
+            <p>Password</p>
+            <input type="password" id="passwordField" name="password" placeholder="Password here">
+            <button type="submit" id="loginButton" onclick="login()">Login</button>
+        </form>
+        <button type="button" id="registerButton" onclick="register()">Register</button>
+    </div>
+
+    <script>
+        document.getElementById("LoginBox").addEventListener("submit", function(event) {
+            event.preventDefault();
+            const formData = new FormData(this);
+            const username = formData.get("username").trim();
+            const password = formData.get("password").trim();
+            login(username, password);
+        });
+
+        function login(username, password) {
+            if(!username.trim() || !password.trim()) {
+                alert("please provide both a username and password");
+                return;
+            }
+            fetch("/Login", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({username, password})
+            })
+            .then(response => {
+                if(response.ok) {
+                    console.log("Login was successful!");
+                    return response.json();
+                } else {
+                    console.error("Login has failed!");
+                }
+            })
+            .then(data => {
+                if(data && data.userData) {
+                    localStorage.setItem('userData', JSON.stringify(data.userData));
+                } else {
+                    console.error("No userdata found");
+                }
+                console.log("userData is currently:", data.userData);
+                window.location.href = "/mainpage.html"; //move to main page
+            })
+            .catch(error => {
+                console.error("Error:", error);
+            });
+        }
+
+        function register() {
+            window.location.href = "/registration.html";
+        }
+
+        
+    </script>
+</body>
+</html>

@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="'viewport" content="'width=device-width,initial-scale=1.0">
+        <title>Admin Screen</title>
+        <style>
+            body {
+            font-family: Arial, sans-serif;
+            background-color:blanchedalmond;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        h1 {
+            color:blue;
+            margin-bottom: 20px;
+            text-align: center;
+            line-height: 1.2;
+        }
+
+        .MainPanel {
+            background-color: #f9f9f9;
+            border-radius: 10px;
+            padding: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 60%;
+            max-width: 240px;
+            margin-bottom: 10px;
+        }
+
+        #users {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+            text-align: left;
+        }
+
+        .userEntry {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .userEntry button {
+            margin-left: 10px;
+        }
+
+        .userEntry button:first-child {
+            margin-left: 0;
+        }
+
+        .userEntry button:last-child {
+            margin-right: 0;
+        }
+
+        #petinfo {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .PetAddPanel {
+            background-color: #f9f9f9;
+            border-radius: 10px;
+            padding: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 60%;
+            max-width: 240px;
+            margin-bottom: 10px;
+        }
+
+        label {
+            margin-bottom: 5px;
+        }
+
+        input[type="text"], input[type="number"], button[type="submit"] {
+            margin-bottom: 10px;
+        }
+
+        button[type="submit"] {
+            width: 100%;
+        }
+
+
+
+        </style>
+    </head>
+        <body>
+            <h1 id="Welcome">Administrator Screen</h1>
+
+            <div class="MainPanel">
+                <h3>Users Table</h3>
+                <ul id="users"></ul>
+            </div>
+
+            <div class="PetAddPanel">
+                <p>Add a new pet to the system</p>
+                <form id="petinfo">
+                    <label for="Title">Name:</label>
+                    <input type="text" id="Title" name="Title" required><br>
+
+                    <label for="Species">Species:</label>
+                    <input type="text" id="Species" name="Species" required><br>
+
+                    <label for="Breed">Breed:</label>
+                    <input type="text" id="Breed" name="Breed"><br>
+
+                    <label for="Price">Price:</label>
+                    <input type="text" id="Price" name="Price" min="0" step="0.01" required><br>
+
+                    <button type="submit">Add pet to the database</button>
+                </form>
+            </div>
+
+            <button id="BackButton" onclick="Back()">Back to Main</button>
+
+            <script>
+                //grab form information
+                document.getElementById("petinfo").addEventListener("submit", function(event) {
+                    event.preventDefault();
+
+                    const formData = new FormData(this);
+                    const Title = document.getElementById("Title").value;
+                    const Species = document.getElementById("Species").value;
+                    const Breed = document.getElementById("Breed").value;
+                    const Price = document.getElementById("Price").value;
+
+                    fetch("/pets", {
+                        method: 'POST',
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({Title, Species, Breed, Price})
+                    })
+                    .then(response => {
+                        if(response.ok) {
+                            alert("Pet Added!");
+                            window.location.reload(); //just to signify the add went through
+                        } else {
+                            console.error("Failed to add pet to the DB");
+                        }
+                    })
+                    .catch(error => {
+                        console.error("Error:", error);
+                    });
+                });
+
+
+                //populate list of users with the SQL command
+                fetch('/users') //grab the pets list from the DB
+                    .then(response => response.json())
+                    .then(users => {
+                        const userList = document.getElementById('users');
+                        users.forEach(user => {
+                            const li = document.createElement("li");
+                            li.textContent = `${user.username}, ${user.email}, ${user.administrator}`;
+                            li.dataset.id = user.id;
+
+                            //delete user buttons
+                            const deleteButton = document.createElement("button");
+                            deleteButton.textContent = "Delete User";
+                            deleteButton.onclick = () => DeleteUser(li.dataset.id);
+
+                            li.appendChild(deleteButton);
+                            userList.appendChild(li);
+                        });
+                    })
+                    .catch(error => console.error('Error fetching users:', error));
+
+                function DeleteUser(userID) {
+                    fetch(`/users/${userID}`, {
+                        method: 'DELETE',
+                    })
+                    .then(response => {
+                        if(response.ok) {
+                            const userElement = document.querySelector(`[data-id=${userID}]`);
+                            if(userElement) {
+                                userElement.remove();
+                                window.location.reload();
+                            }
+                        } else {
+                        console.error('Failed to delete user');
+                        }
+                    })
+                    .catch(error => console.error('Error deleting user:', error));
+                }
+
+
+                function Back() {
+                    window.location.href = '/mainpage.html';
+                }
+
+            </script>
+
+
+        </body>
+</html>

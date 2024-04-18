@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <title>Edit Account Screen</title>
+        <style>
+            body {
+            font-family: Arial, sans-serif;
+            background-color:blanchedalmond;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        h1 {
+            color:blue;
+            margin-bottom: 20px;
+            text-align: center;
+            line-height: 1.2;
+        }
+
+        #MainAccountInfo {
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 60%;
+            max-width: 600px;
+            margin-bottom: 50px;
+        }
+
+
+        </style>
+    </head>
+        <body>
+            <h1 id="welcome">Edit Account Info</h1>
+
+            <div id="userInfo"></div>
+
+            <div id="MainAccountInfo">
+                <input type="text" id="username" placeholder="new username...">
+                <input type="text" id="password" placeholder="new password...">
+                <input type="text" id="email" placeholder="new email...">
+            </div>
+
+            <div id="Buttons?"> 
+                <button id="confirmButton" onclick="submitOptions()">Submit Changes</button>
+                <button id="returnButton" onclick="backtoMain()">Back to Main Menu</button>
+            </div>
+
+
+
+            <script>
+                //grab userData and put it into the text fields of the MainAccountInfo
+                //perform a SQL query for this accounts info, we have the ID in the session info
+                const userData = JSON.parse(localStorage.getItem('userData'));
+
+                fetch(`/users/${userData.id}`)
+                .then(response => {
+                    if(!response.ok) {
+                        throw new Error('Network response not correct');
+                    }
+                    return response.json();
+                })
+                .then(response => {
+                    const userDataFromServer = response[0];
+                    const userInfoDiv = document.getElementById('userInfo');
+                    userInfoDiv.innerHTML = `<p><strong>Username:</strong> ${userDataFromServer.username}</p>
+                    <p><strong>Password:</strong> ${userDataFromServer.pass}</p>
+                    <p><strong>Email:</strong> ${userDataFromServer.email}</p>`;
+                })
+                .catch(error => {
+                    console.error('There was a problem fetching this account info:', error);
+                });
+
+                //now we can have the submit function and back to main function
+                function backtoMain() {
+                    window.location.href = '/mainpage.html';
+                }
+
+                function submitOptions() {
+                    const userData = JSON.parse(localStorage.getItem('userData'));
+                    const usernameInput = document.getElementById('username').value;
+                    const passwordInput = document.getElementById('password').value;
+                    const emailInput = document.getElementById('email').value;
+
+                    if(!usernameInput || !passwordInput || !emailInput) {
+                        alert("Please fill in all the fields.");
+                        return;
+                    }
+
+                    const updatedUserData = {
+                        username: usernameInput,
+                        pass: passwordInput,
+                        email: emailInput
+                    };
+
+                    fetch(`/users/${userData.id}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(updatedUserData)
+                    })
+                    .then(response => {
+                        if(!response.ok) {
+                            throw new Error('Failed to update user');
+                        }
+                        return response.json();
+                    })
+                    .then(() => {
+                        fetch('/Logout', {
+                            method: 'POST'
+                        })
+                        .then(() => {
+                            window.location.href = '/index.html';
+                        })
+                        .catch(error => {
+                            console.error('Error logging out after updating user:', error);
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Error updating user:', error);
+                        alert('Failed to update your info, please try again later');
+                    });
+                }
+
+            </script>
+
+            
+        </body>
+</html>

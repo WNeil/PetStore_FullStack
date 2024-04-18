@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Registration Screen</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                background-color:blanchedalmond;
+                margin: 0;
+                padding: 0;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+            }
+
+            #container {
+                background-color:bisque;
+                padding: 20px;
+                border-radius: 5px;
+                box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            }
+
+            h1 {
+                color:blue;
+            }
+
+            form {
+                text-align: center;
+            }
+
+            input[type="text"],
+            input[type="password"] {
+                width: 100%;
+                padding: 10px;
+                margin: 8px 0;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+                box-sizing: border-box;
+            }
+
+            button[type="submit"],
+            button[type="button"] {
+                background-color: #4CAF50;
+                color: white;
+                padding: 14px 20px;
+                margin: 8px 0;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+                width: 100%;
+            }
+
+            button[type="submit"]:hover,
+            button[type="button"]:hover {
+                background-color: #45a049;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="container">
+            <h1>Register Screen</h1>
+
+            <form id="RegisterBox">
+                <p>Username</p>
+                <input type="text" id="usernameField" name="username" placeholder="Username here">
+                <p>Password</p>
+                <input type="password" id="passwordField" name="password" placeholder="Password here">
+                <p>Email</p>
+                <input type="text" id="emailField" name="email" placeholder="Email here">
+                <input type="checkbox" id="adminCheck" name="admin" value="Yes">
+                <label for="admin"> Admin Privileges</label><br>
+                <button type="submit" id="registerButton">Register</button>
+            </form>
+        
+            <div class="button-container">
+                <button type="button" id="backButton" onclick="back()">Back to Login</button>
+            </div>
+        </div>    
+        <script>
+            document.getElementById("RegisterBox").addEventListener("submit", function(event) {
+            const formData = new FormData(this);
+            const username = formData.get("username");
+            const password = formData.get("password");
+            const email = formData.get("email");
+            const admin = formData.get("admin") ? true : false;
+            Register(username, password, email, admin);
+        });
+
+            function Register(username, password, email, admin) {
+                fetch('/Register', {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({username, password, email, admin})
+                })
+                .then(response => {
+                    if(response.ok) {
+                        console.log("Successfully registered user!");
+                        window.location.href = "/index.html"; //after all is done, go back to login
+                    } else {
+                        console.log("Registration failed! duplicate user?");
+                    }
+                })
+                .catch(error => {
+                    console.error("Error:", error);
+                });
+            }
+
+            function back() {
+                window.location.href = "/index.html";
+            }
+        </script>
+
+    </body>
+</html>
